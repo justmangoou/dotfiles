@@ -1,0 +1,110 @@
+{
+  "wallpapersFolder": "~/.local/share/Steam/steamapps/workshop/content/431960",
+  "iconColor": "none",
+  "enableExtraPropertiesEditor": true,
+  "defaultScaling": "fill",
+  "defaultClamp": "clamp",
+  "defaultFps": 30,
+  "defaultVolume": 100,
+  "defaultMuted": true,
+  "defaultAudioReactiveEffects": true,
+  "defaultNoAutomute": false,
+  "defaultDisableMouse": false,
+  "defaultDisableParallax": false,
+  "applyWallpaperColorsOnApply": false,
+  "wallpaperColorScreenshots": {},
+  "defaultNoFullscreenPause": false,
+  "defaultFullscreenPauseOnlyActive": false,
+  "showSidebarDescription": false,
+  "badgeOrder": [
+    "type",
+    "dynamic",
+    "music",
+    "reactive",
+    "approved",
+    "resolution",
+    "compatibility"
+  ],
+  "badgeEnabled": {
+    "type": true,
+    "dynamic": true,
+    "music": false,
+    "reactive": true,
+    "approved": true,
+    "resolution": true,
+    "compatibility": true
+  },
+  "autoApplyOnStartup": true,
+  "panelPageSize": 24,
+  "wallpaperScanCacheMinutes": 10,
+  "panelLastSelectedPath": "",
+  "screens": {
+    "HDMI-A-1": {
+      "path": "/home/justmango/.local/share/Steam/steamapps/workshop/content/431960/3600333874",
+      "scaling": "fill"
+    },
+    "DP-3": {
+      "path": "/home/justmango/.local/share/Steam/steamapps/workshop/content/431960/3600333874",
+      "scaling": "fill"
+    },
+    "DP-2": {
+      "path": "/home/justmango/.local/share/Steam/steamapps/workshop/content/431960/3600333874",
+      "scaling": "fill"
+    }
+  },
+  "wallpaperProperties": {
+    "2411455579": {
+      "_24hourformat": "1",
+      "bloom": "1",
+      "clock": "0",
+      "clockoriginx": "92.5",
+      "clockoriginy": "135",
+      "cloud": "1",
+      "color1": "255,255,255",
+      "generalsettings": "1",
+      "newproperty": "30",
+      "schemecolor": "150,130,120",
+      "showseconds": "1",
+      "snow": "1",
+      "snowcount1": "0.5",
+      "snowsize": "0.5",
+      "stars": "1"
+    },
+    "3016047975": {
+      "clock": "1",
+      "doorbell": "0.7",
+      "fallenleaves": "1",
+      "newproperty": "1",
+      "puddle": "1",
+      "rain": "1",
+      "rain1": "0.8",
+      "schemecolor": "192,192,192"
+    },
+    "3100678154": {
+      "schemecolor": "0,0,0"
+    },
+    "3600333874": {
+      "bloom": "0",
+      "dust": "0",
+      "light": "0",
+      "necklace": "1",
+      "oled": "1",
+      "schemecolor": "0,0,0"
+    }
+  },
+  "lastKnownGoodScreens": {
+    "HDMI-A-1": {
+      "path": "/home/justmango/.local/share/Steam/steamapps/workshop/content/431960/3600333874",
+      "scaling": "fill"
+    },
+    "DP-3": {
+      "path": "/home/justmango/.local/share/Steam/steamapps/workshop/content/431960/3600333874",
+      "scaling": "fill"
+    },
+    "DP-2": {
+      "path": "/home/justmango/.local/share/Steam/steamapps/workshop/content/431960/3600333874",
+      "scaling": "fill"
+    }
+  },
+  "runtimeRecoveryPending": false
+}
