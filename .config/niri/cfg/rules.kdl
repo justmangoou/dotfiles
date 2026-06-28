@@ -11,13 +11,11 @@ layer-rule {
 window-rule {
     match app-id="discord"
     open-on-output "HDMI-A-1"
-    open-fullscreen true
 }
 
 window-rule {
     match app-id="^YouTube Music Desktop App$"
     open-on-output "HDMI-A-1"
-    open-fullscreen true
 }
 
 window-rule {

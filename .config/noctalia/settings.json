@@ -228,9 +228,6 @@
                     "useDistroLogo": false
                 },
                 {
-                    "id": "plugin:linux-wallpaperengine-controller"
-                },
-                {
                     "defaultSettings": {
                         "applyWallpaperColorsOnApply": false,
                         "autoApplyOnStartup": true,
@@ -289,7 +286,7 @@
         "backlightDeviceMappings": [
         ],
         "brightnessStep": 5,
-        "enableDdcSupport": false,
+        "enableDdcSupport": true,
         "enforceMinimum": true
     },
     "calendar": {
@@ -506,7 +503,7 @@
         "screenOffCommand": "",
         "screenOffTimeout": 120,
         "suspendCommand": "",
-        "suspendTimeout": 1800
+        "suspendTimeout": 1200
     },
     "location": {
         "analogClockInCalendar": false,
@@ -690,6 +687,18 @@
     },
     "templates": {
         "activeTemplates": [
+            {
+                "enabled": true,
+                "id": "alacritty"
+            },
+            {
+                "enabled": true,
+                "id": "niri"
+            },
+            {
+                "enabled": true,
+                "id": "steam"
+            }
         ],
         "enableUserTheming": false
     },

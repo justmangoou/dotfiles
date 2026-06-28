@@ -127,8 +127,12 @@ binds {
     Mod+CTRL+C                          { center-visible-columns; }
     Mod+Minus                           { set-column-width "-10%"; }
     Mod+Equal                           { set-column-width "+10%"; }
+    Mod+CTRL+Minus                      { set-column-width "-20%"; }
+    Mod+CTRL+Equal                      { set-column-width "+20%"; }
     Mod+Shift+Minus                     { set-window-height "-10%"; }
+    Mod+Shift+CTRL+Minus                { set-window-height "-20%"; }
     Mod+Shift+Equal                     { set-window-height "+10%"; }
+    Mod+Shift+CTRL+Equal                { set-window-height "+20%"; }
 
     // ─── Modes ───
     Mod+T                               { toggle-window-floating; }
