@@ -60,9 +60,9 @@ binds {
     Mod+J                               { focus-window-down; }
 
     Mod+CTRL+Left                       { move-column-left; }
-    Mod+CTRL+H                          { move-column-left; }
+    Mod+CTRL+H                          { consume-or-expel-window-left; }
     Mod+CTRL+Right                      { move-column-right; }
-    Mod+CTRL+L                          { move-column-right; }
+    Mod+CTRL+L                          { consume-or-expel-window-right; }
     Mod+CTRL+UP                         { move-window-up; }
     Mod+CTRL+K                          { move-window-up; }
     Mod+CTRL+Down                       { move-window-down; }

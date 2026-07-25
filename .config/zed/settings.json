@@ -7,6 +7,25 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "agent_servers": {
+    "claude-acp": {
+      "default_config_options": {
+        "mode": "plan",
+        "effort": "medium",
+        "model": "sonnet"
+      },
+      "type": "registry"
+    },
+    "github-copilot-cli": {
+      "type": "registry"
+    }
+  },
+  "agent": {
+    "sidebar_side": "right",
+    "dock": "right",
+    "favorite_models": [],
+    "model_parameters": []
+  },
   "base_keymap": "JetBrains",
   "edit_predictions": {
     "provider": "copilot"
@@ -25,11 +44,30 @@
   },
   "format_on_save": "off",
   "languages": {
+    "Typst": {
+			"soft_wrap": "none",
+		},
     "Rust": {
       "format_on_save": "on",
     },
   },
   "lsp": {
+    "tinymist": {
+			"initialization_options": {
+				"preview": {
+					"background": {
+						"enabled": true,
+					},
+				},
+			},
+
+			"settings": {
+				"exportPdf": "onSave",
+				"outputPath": "$root/$name",
+
+				"formatterMode": "typstyle",
+			}
+		},
     "rust-analyzer": {
       "initialization_options": {
         "check": {
