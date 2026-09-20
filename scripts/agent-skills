@@ -1,0 +1,325 @@
+#!/usr/bin/env bash
+# Manage shared agent skills from this dotfiles checkout. Run as scripts/agent-skills.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd -P)"
+CUSTOM_SKILLS_DIR="$REPO_ROOT/.agent-skills"
+REGISTRY_FILE="$REPO_ROOT/.agent-skills/sources.tsv"
+AGENTS_SKILLS_DIR="${AGENTS_SKILLS_DIR:-$HOME/.agents/skills}"
+CLAUDE_SKILLS_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
+MANAGED_MARKER=".managed-by-dotfiles-agent-skills"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  scripts/agent-skills add <source> [--skill <name> ...]
+  scripts/agent-skills remove <source>
+  scripts/agent-skills install
+  scripts/agent-skills update
+  scripts/agent-skills sync-custom
+  scripts/agent-skills list
+
+Commands:
+  add           Track a skills.sh source and install it into ~/.agents/skills
+                and ~/.claude/skills. Give no skill names to install all skills
+                found in the source.
+  remove        Remove every explicitly tracked skill from both agent folders,
+                then stop tracking its source. Sources tracked with '*' must be
+                edited manually because removing every skill is not safe.
+  install       Install every source tracked in .agent-skills/sources.tsv.
+  update        Update globally installed community skills, then sync local ones.
+  sync-custom   Copy this repository's .agent-skills/<name>/ directories to
+                both agents.
+  list          Show tracked community sources and local custom skills.
+
+Environment:
+  AGENTS_SKILLS_DIR  Override ~/.agents/skills
+  CLAUDE_SKILLS_DIR  Override ~/.claude/skills
+
+Examples:
+  scripts/agent-skills add vercel-labs/agent-skills --skill frontend-design --skill skill-creator
+  scripts/agent-skills remove vercel-labs/agent-skills
+  scripts/agent-skills add https://skills.sh/p/<pack-id>
+  scripts/agent-skills update
+EOF
+}
+
+die() {
+  printf 'agent-skills: %s\n' "$*" >&2
+  exit 1
+}
+
+require_npx() {
+  command -v npx >/dev/null 2>&1 || die 'npx is required; install Node.js first.'
+}
+
+trim_whitespace() {
+  local value="$1"
+
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s\n' "$value"
+}
+
+normalize_selection() {
+  local selection skill existing found result=''
+  local -a skills existing_skills
+
+  selection="$(trim_whitespace "$1")"
+  [[ -n "$selection" ]] || die 'skill selection cannot be blank.'
+  [[ "$selection" != ,* && "$selection" != *, && "$selection" != *',,'* ]] || die "invalid skill selection '$1'."
+  [[ "$selection" == '*' ]] && { printf '*\n'; return; }
+
+  IFS=',' read -r -a skills <<<"$selection"
+  for skill in "${skills[@]}"; do
+    skill="$(trim_whitespace "$skill")"
+    [[ -n "$skill" ]] || die "invalid blank skill in selection '$1'."
+    [[ "$skill" != '*' ]] || die "'*' must be the only skill in a selection."
+    found=0
+    if [[ -n "$result" ]]; then
+      IFS=',' read -r -a existing_skills <<<"$result"
+      for existing in "${existing_skills[@]}"; do
+        [[ "$existing" == "$skill" ]] && found=1
+      done
+    fi
+    (( found == 1 )) || result+="${result:+,}$skill"
+  done
+  printf '%s\n' "$result"
+}
+
+install_source() {
+  local source="$1"
+  local selection="$2"
+  local -a command=(npx --yes skills add "$source" --global --copy --agent cline --agent claude-code --yes)
+  local -a skills
+  local skill
+
+  selection="$(normalize_selection "$selection")"
+  IFS=',' read -r -a skills <<<"$selection"
+  for skill in "${skills[@]}"; do
+    command+=(--skill "$skill")
+  done
+
+  # The Cline target uses ~/.agents/skills, which is the shared agent-skills path.
+  DISABLE_TELEMETRY=1 "${command[@]}"
+}
+
+install_registry() {
+  local source selection extra
+
+  require_npx
+  [[ -f "$REGISTRY_FILE" ]] || die "missing registry: $REGISTRY_FILE"
+  while IFS=$'\t' read -r source selection extra; do
+    [[ -z "$source" || "$source" == \#* ]] && continue
+    [[ -n "$selection" && -z "$extra" ]] || die "invalid registry entry for $source"
+    printf 'Installing %s\n' "$source"
+    install_source "$source" "$selection"
+  done < "$REGISTRY_FILE"
+}
+
+sync_skill() {
+  local source="$1"
+  local name="$2"
+  local destination="$3/$name"
+
+  if [[ -e "$destination" && ! -f "$destination/$MANAGED_MARKER" ]]; then
+    die "custom skill '$name' conflicts with $destination; rename it or remove that skill first."
+  fi
+
+  mkdir -p "$destination"
+  rsync --archive --checksum --delete --exclude "$MANAGED_MARKER" "$source/" "$destination/"
+  : > "$destination/$MANAGED_MARKER"
+}
+
+sync_custom() {
+  local skill_file source name
+
+  mkdir -p "$AGENTS_SKILLS_DIR" "$CLAUDE_SKILLS_DIR"
+  shopt -s nullglob
+  for skill_file in "$CUSTOM_SKILLS_DIR"/*/SKILL.md; do
+    source="$(dirname "$skill_file")"
+    name="$(basename "$source")"
+    sync_skill "$source" "$name" "$AGENTS_SKILLS_DIR"
+    sync_skill "$source" "$name" "$CLAUDE_SKILLS_DIR"
+    printf 'Synced custom skill %s\n' "$name"
+  done
+}
+
+add_source() {
+  local source="$1"
+  shift
+  local selection='*'
+  local existing_selection='' merged_selection temporary_registry raw_line
+  local entry_source entry_selection extra wrote_source=0
+  local skill
+  local -a requested_skills=()
+
+  [[ "$source" != *$'\t'* && "$source" != *$'\n'* ]] || die 'source cannot contain tabs or newlines.'
+  while (( $# > 0 )); do
+    case "$1" in
+      --skill)
+        shift
+        (( $# > 0 )) || die '--skill requires a skill name.'
+        requested_skills+=("$1")
+        ;;
+      --skill=*)
+        requested_skills+=("${1#--skill=}")
+        ;;
+      *)
+        requested_skills+=("$1")
+        ;;
+    esac
+    shift
+  done
+  if (( ${#requested_skills[@]} > 0 )); then
+    selection=''
+    for skill in "${requested_skills[@]}"; do
+      skill="$(trim_whitespace "$skill")"
+      [[ -n "$skill" ]] || die 'skill names cannot be blank.'
+      [[ "$skill" != *,* && "$skill" != *$'\t'* && "$skill" != *$'\n'* ]] || die 'skill names cannot contain commas, tabs, or newlines.'
+      selection+="${selection:+,}$skill"
+    done
+  fi
+
+  while IFS=$'\t' read -r entry_source entry_selection extra; do
+    [[ -z "$entry_source" || "$entry_source" == \#* ]] && continue
+    if [[ "$entry_source" == "$source" ]]; then
+      [[ -n "$entry_selection" && -z "$extra" ]] || die "invalid registry entry for $source"
+      existing_selection="$(merge_selections "$existing_selection" "$entry_selection")"
+    fi
+  done < "$REGISTRY_FILE"
+  merged_selection="$(merge_selections "$existing_selection" "$selection")"
+
+  temporary_registry="$(mktemp "$REGISTRY_FILE.XXXXXX")"
+  while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
+    IFS=$'\t' read -r entry_source entry_selection extra <<<"$raw_line"
+    if [[ "$entry_source" == "$source" ]]; then
+      if (( wrote_source == 0 )); then
+        printf '%s\t%s\n' "$source" "$merged_selection" >> "$temporary_registry"
+        wrote_source=1
+      fi
+    else
+      printf '%s\n' "$raw_line" >> "$temporary_registry"
+    fi
+  done < "$REGISTRY_FILE"
+  if (( wrote_source == 0 )); then
+    printf '%s\t%s\n' "$source" "$merged_selection" >> "$temporary_registry"
+  fi
+  mv "$temporary_registry" "$REGISTRY_FILE"
+  printf 'Tracked %s in %s\n' "$source" "$REGISTRY_FILE"
+  require_npx
+  install_source "$source" "$selection"
+}
+
+merge_selections() {
+  local result=''
+  local selection skill existing found
+  local -a skills existing_skills
+
+  for selection in "$@"; do
+    [[ -z "$selection" ]] && continue
+    selection="$(normalize_selection "$selection")"
+    [[ "$selection" == '*' ]] && { printf '*\n'; return; }
+    IFS=',' read -r -a skills <<<"$selection"
+    for skill in "${skills[@]}"; do
+      found=0
+      if [[ -n "$result" ]]; then
+        IFS=',' read -r -a existing_skills <<<"$result"
+        for existing in "${existing_skills[@]}"; do
+          [[ "$existing" == "$skill" ]] && found=1
+        done
+      fi
+      (( found == 1 )) || result+="${result:+,}$skill"
+    done
+  done
+  printf '%s\n' "$result"
+}
+
+remove_source() {
+  local source="$1"
+  local entry_source entry_selection extra selection='' registry_selection=''
+  local matches=0
+  local -a skills command
+  local skill line temporary_registry
+
+  while IFS=$'\t' read -r entry_source entry_selection extra; do
+    [[ -z "$entry_source" || "$entry_source" == \#* ]] && continue
+    if [[ "$entry_source" == "$source" ]]; then
+      ((matches += 1))
+      selection="$entry_selection"
+      registry_selection="$entry_selection"
+    fi
+  done < "$REGISTRY_FILE"
+
+  (( matches == 1 )) || die "expected one tracked entry for '$source', found $matches."
+  selection="$(normalize_selection "$selection")"
+  [[ "$selection" != '*' ]] || die "'$source' tracks every skill. Remove unwanted skills with 'npx skills remove -g', then delete its line from $REGISTRY_FILE."
+
+  IFS=',' read -r -a skills <<<"$selection"
+  command=(npx --yes skills remove --global --agent cline --agent claude-code --yes)
+  for skill in "${skills[@]}"; do
+    command+=("$skill")
+  done
+
+  require_npx
+  DISABLE_TELEMETRY=1 "${command[@]}"
+
+  line="$source"$'\t'"$registry_selection"
+  temporary_registry="$(mktemp "$REGISTRY_FILE.XXXXXX")"
+  awk -v target="$line" '$0 != target' "$REGISTRY_FILE" > "$temporary_registry"
+  mv "$temporary_registry" "$REGISTRY_FILE"
+  printf 'Removed %s and stopped tracking %s\n' "$selection" "$source"
+}
+
+list_skills() {
+  local skill_file
+
+  printf 'Community sources:\n'
+  sed -n '/^[^#[:space:]]/s/\t/  /p' "$REGISTRY_FILE"
+  printf '\nCustom skills:\n'
+  shopt -s nullglob
+  for skill_file in "$CUSTOM_SKILLS_DIR"/*/SKILL.md; do
+    basename "$(dirname "$skill_file")"
+  done
+}
+
+command_name="${1:-}"
+case "$command_name" in
+  add)
+    (( $# >= 2 )) || { usage >&2; exit 2; }
+    shift
+    add_source "$@"
+    sync_custom
+    ;;
+  remove)
+    (( $# == 2 )) || { usage >&2; exit 2; }
+    remove_source "$2"
+    ;;
+  install)
+    (( $# == 1 )) || { usage >&2; exit 2; }
+    install_registry
+    sync_custom
+    ;;
+  update)
+    (( $# == 1 )) || { usage >&2; exit 2; }
+    require_npx
+    DISABLE_TELEMETRY=1 npx --yes skills update --global --yes
+    sync_custom
+    ;;
+  sync-custom)
+    (( $# == 1 )) || { usage >&2; exit 2; }
+    sync_custom
+    ;;
+  list)
+    (( $# == 1 )) || { usage >&2; exit 2; }
+    list_skills
+    ;;
+  -h|--help|help|'')
+    usage
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac

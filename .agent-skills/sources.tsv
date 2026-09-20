@@ -1,0 +1,6 @@
+# One source per line: <source><TAB><comma-separated skill names>
+# Use * to install every skill found in a source.
+https://github.com/juliusbrussee/caveman	caveman,caveman-compress
+https://github.com/mattpocock/skills	grill-with-docs,implement,tdd,diagnosing-bugs
+https://github.com/anthropics/skills	frontend-design
+https://github.com/vercel-labs/agent-browser	agent-browser
