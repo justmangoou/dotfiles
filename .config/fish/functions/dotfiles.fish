@@ -1,3 +1,3 @@
-function dotfiles --wraps='/usr/bin/git --git-dir=/home/justmango/.dotfiles/ --work-tree=/home/justmango' --description 'alias dotfiles=/usr/bin/git --git-dir=/home/justmango/.dotfiles/ --work-tree=/home/justmango'
-    /usr/bin/git --git-dir=/home/justmango/.dotfiles/ --work-tree=/home/justmango $argv
+function dotfiles --description 'Manage the bare dotfiles repository'
+    command git --git-dir="$HOME/.dotfiles" --work-tree="$HOME" $argv
 end

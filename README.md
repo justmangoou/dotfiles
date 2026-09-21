@@ -1,5 +1,34 @@
 # dotfiles
 
+## Setup
+
+This repository uses Git's bare-repository pattern. `scripts/install.sh` clones the
+repository into `~/.dotfiles` and checks the tracked files out into `$HOME`.
+The installed Fish function lets you manage it with ordinary Git commands:
+
+```fish
+dotfiles add .config/fish/config.fish
+dotfiles status
+dotfiles commit -m 'feat(fish): add configuration'
+```
+
+Run it directly on a new machine:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/justmangoou/dotfiles/main/scripts/install.sh | bash
+```
+
+To use a fork, download the script and run `scripts/install.sh --repo <url>`.
+It installs the skills from `.agent-skills/sources.tsv` after checkout; pass
+`--skip-skills` to skip that network step. The installer refuses to overwrite
+existing files.
+
+To install only the tracked community skills on a host without this repository:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/justmangoou/dotfiles/main/scripts/install-agent-skills.sh | bash
+```
+
 ## Agent skills
 
 `scripts/agent-skills` manages skills shared by tools that read
