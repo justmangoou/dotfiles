@@ -39,11 +39,11 @@ while IFS=$'\t' read -r source selection extra; do
   done
 
   printf 'Installing %s\n' "$source"
-  DISABLE_TELEMETRY=1 "${command[@]}"
+  DISABLE_TELEMETRY=1 "${command[@]}" </dev/null
 done < "$REGISTRY_FILE"
 
 (( ${#installed_skills[@]} > 0 )) || die 'no skills found in registry.'
 printf 'Updating tracked skills\n'
-DISABLE_TELEMETRY=1 npx --yes skills update --global --yes "${installed_skills[@]}"
+DISABLE_TELEMETRY=1 npx --yes skills update --global --yes "${installed_skills[@]}" </dev/null
 
 printf 'Installed and updated %d skill(s).\n' "${#installed_skills[@]}"

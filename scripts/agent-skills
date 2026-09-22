@@ -102,7 +102,7 @@ install_source() {
   done
 
   # The Cline target uses ~/.agents/skills, which is the shared agent-skills path.
-  DISABLE_TELEMETRY=1 "${command[@]}"
+  DISABLE_TELEMETRY=1 "${command[@]}" </dev/null
 }
 
 install_registry() {
@@ -304,7 +304,7 @@ case "$command_name" in
   update)
     (( $# == 1 )) || { usage >&2; exit 2; }
     require_npx
-    DISABLE_TELEMETRY=1 npx --yes skills update --global --yes
+    DISABLE_TELEMETRY=1 npx --yes skills update --global --yes </dev/null
     sync_custom
     ;;
   sync-custom)
