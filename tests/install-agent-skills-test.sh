@@ -21,9 +21,14 @@ output="$(REGISTRY_SOURCE="$registry_source" \
   bash "$repo_root/scripts/install-agent-skills.sh")"
 
 adds="$(printf '%s\n' "$output" | rg -c '^--yes skills add ' || true)"
-[[ "$adds" == 2 ]] || {
-  printf 'expected both registry sources to be installed, got %s\n' "$adds" >&2
+[[ "$adds" == 3 ]] || {
+  printf 'expected all registry sources to be installed, got %s\n' "$adds" >&2
   exit 1
 }
 printf '%s\n' "$output" | rg -q 'https://github.com/juliusbrussee/caveman'
 printf '%s\n' "$output" | rg -q 'https://github.com/mattpocock/skills'
+printf '%s\n' "$output" | rg -q 'https://github.com/vercel-labs/skills'
+printf '%s\n' "$output" | rg -q 'mattpocock/skills .*--skill grilling'
+printf '%s\n' "$output" | rg -q 'mattpocock/skills .*--skill domain-modeling'
+printf '%s\n' "$output" | rg -q 'mattpocock/skills .*--skill code-review'
+printf '%s\n' "$output" | rg -q 'vercel-labs/skills .*--skill find-skills'
